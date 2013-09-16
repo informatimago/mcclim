@@ -2484,21 +2484,21 @@ returned in its place."
   (declare (list list))
   (coerce list 'simple-vector))
 
-(defparameter +comma-marker+ (gensym "COMMA")
+(defparameter *comma-marker* (gensym "COMMA")
   "The marker used for identifying commas.")
-(defparameter +comma-at-marker+ (gensym "COMMA-AT")
+(defparameter *comma-at-marker* (gensym "COMMA-AT")
   "The marker used for identifying ,@ contructs.")
-(defparameter +comma-dot-marker+ (gensym "COMMA-DOT")
+(defparameter *comma-dot-marker* (gensym "COMMA-DOT")
   "The marker used for identifying ,. contructs.")
 
-(defparameter +clobberable-marker+ (gensym "CLOBBERABLE")
+(defparameter *clobberable-marker* (gensym "CLOBBERABLE")
   "Marker for a constant that we can safely modify
 destructively.")
 
 (defconstant +quote-marker+ 'quote
   "The marker used for identifying quote forms in backquoted
 forms.")
-(defconstant +quote-nil-marker+ (list +quote-marker+ nil))
+(defparameter *quote-nil-marker* (list +quote-marker+ nil))
 (defconstant +list-marker+ 'backquote-list)
 (defconstant +append-marker+ 'backquote-append)
 (defconstant +list*-marker+ 'backquote-list*)
@@ -2522,39 +2522,39 @@ by a backquote."
                    collecting elt))))
         ((atom x)
          (list +quote-marker+ x))
-        ((eq (car x) +comma-marker+) (cadr x))
-        ((eq (car x) +comma-at-marker+)
+        ((eq (car x) *comma-marker*) (cadr x))
+        ((eq (car x) *comma-at-marker*)
          (error ",@~S after `" (cadr x)))
-        ((eq (car x) +comma-dot-marker+)
+        ((eq (car x) *comma-dot-marker*)
          (error ",.~S after `" (cadr x)))
         (t (do ((p x (cdr p))
                 (q '() (cons (bracket (car p)) q)))
                ((atom p)
                 (cons +append-marker+
                       (nreconc q (list (list +quote-marker+ p)))))
-             (when (eq (car p) +comma-marker+)
+             (when (eq (car p) *comma-marker*)
                (unless (null (cddr p)) (error "Malformed ,~S" p))
                (return (cons +append-marker+
                              (nreconc q (list (cadr p))))))
-             (when (eq (car p) +comma-at-marker+)
+             (when (eq (car p) *comma-at-marker*)
                (error "Dotted ,@~S" p))
-             (when (eq (car p) +comma-dot-marker+)
+             (when (eq (car p) *comma-dot-marker*)
                (error "Dotted ,.~S" p))))))
 
 (defun bracket (x)
   (cond ((atom x)
          (list +list-marker+ (process-backquote x)))
-        ((eq (car x) +comma-marker+)
+        ((eq (car x) *comma-marker*)
          (list +list-marker+ (cadr x)))
-        ((eq (car x) +comma-at-marker+)
+        ((eq (car x) *comma-at-marker*)
          (cadr x))
-        ((eq (car x) +comma-dot-marker+)
-         (list +clobberable-marker+ (cadr x)))
+        ((eq (car x) *comma-dot-marker*)
+         (list *clobberable-marker* (cadr x)))
         (t (list +list-marker+ (process-backquote x)))))
 
 (defun remove-backquote-tokens (x)
   (cond ((atom x) x)
-        ((eq (car x) +clobberable-marker+)
+        ((eq (car x) *clobberable-marker*)
          (remove-backquote-tokens (cadr x)))
         ((and (eq (car x) +list*-marker+)
               (consp (cddr x))
@@ -2566,16 +2566,16 @@ by a backquote."
   "True for forms that textually looks like
 ,@foo or ,.foo."
   (and (consp x)
-       (or (eq (car x) +comma-at-marker+)
-           (eq (car x) +comma-dot-marker+))))
+       (or (eq (car x) *comma-at-marker*)
+           (eq (car x) *comma-dot-marker*))))
 
 (defun comma-marker-p (x)
   "This predicate is true of a form that textually looks like
 ,@foo or ,.foo or just plain ,foo."
   (and (consp x)
-       (or (eq (car x) +comma-marker+)
-           (eq (car x) +comma-at-marker+)
-           (eq (car x) +comma-dot-marker+))))
+       (or (eq (car x) *comma-marker*)
+           (eq (car x) *comma-at-marker*)
+           (eq (car x) *comma-dot-marker*))))
 
 (defun simplify-backquote (x)
   (if (atom x)
@@ -2610,7 +2610,7 @@ by a backquote."
                (attach-backquote-conses (list (list +quote-marker+
                                                     (caadar args)))
                                         result))
-              ((eq (caar args) +clobberable-marker+)
+              ((eq (caar args) *clobberable-marker*)
                (attach-backquote-append +nconc-marker+ (cadar args) result))
               (t (attach-backquote-append +append-marker+
                                           (car args)
@@ -2653,7 +2653,7 @@ item result) but some simplifications are done on the fly:
  (op item (op a b c)) => (op item a b c)"
   (cond ((and (null-or-quoted item) (null-or-quoted result) (listp (cadr item)))
          (list +nconc-marker+ (append (cadr item) (cadr result))))
-        ((or (null result) (equal result +quote-nil-marker+))
+        ((or (null result) (equal result *quote-nil-marker*))
          (if (splicing-comma-marker-p item) (list op item) item))
         ((and (consp result) (eq (car result) op))
          (list* (car result) item (cdr result)))
@@ -2962,7 +2962,7 @@ will be signalled for incomplete forms.")
   (let ((obj (apply #'form-to-object syntax (first-form (children form))
                     :backquote-level (max (1- backquote-level) 0) args)))
     (if (plusp backquote-level)
-        (list +comma-marker+ obj)
+        (list *comma-marker* obj)
         obj)))
 
 (defmethod form-to-object ((syntax lisp-syntax) (form comma-at-form) &rest args
@@ -2974,7 +2974,7 @@ will be signalled for incomplete forms.")
   (let ((obj (apply #'form-to-object syntax (first-form (children form))
                     :backquote-level (max (1- backquote-level) 0) args)))
     (if (plusp backquote-level)
-        (list +comma-at-marker+ obj)
+        (list *comma-at-marker* obj)
         obj)))
 
 (defmethod form-to-object ((syntax lisp-syntax) (form comma-dot-form) &rest args
@@ -2986,7 +2986,7 @@ will be signalled for incomplete forms.")
   (let ((obj (apply #'form-to-object syntax (first-form (children form))
                     :backquote-level (max (1- backquote-level) 0) args)))
     (if (plusp backquote-level)
-        (list +comma-dot-marker+ obj)
+        (list *comma-dot-marker* obj)
         obj)))
 
 ;;; The atom(-ish) forms.

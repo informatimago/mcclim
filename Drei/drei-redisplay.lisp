@@ -97,7 +97,7 @@ text style whenever it needs to be used."
   (ink +foreground-ink+)
   (style nil))
 
-(defparameter +default-stroke-drawer-dispatcher+
+(defparameter *default-stroke-drawer-dispatcher*
   #'(lambda (stream view stroke cursor-x cursor-y default-drawing-fn draw)
       (funcall default-drawing-fn stream view stroke cursor-x cursor-y draw))
   "A simple function of seven arguments that simply calls the
@@ -108,7 +108,7 @@ arguments. Used as the default drawing-function of
 (defstruct drawing-options
   "A set of options for how to display a stroke."
   (face (make-face))
-  (function +default-stroke-drawer-dispatcher+))
+  (function *default-stroke-drawer-dispatcher*))
 
 (defun drawing-options-equal (o1 o2)
   "Return true if `o1' and `o2' are equal, that is, they specify
@@ -122,13 +122,13 @@ a `drawing-options' with a `stroke-drawing-fn' drawing function."
     (and (equal (face-ink f1) (face-ink f2))
          (equal (face-style f1) (face-style f2))
          (or (not (eq (drawing-options-function o1)
-                      +default-stroke-drawer-dispatcher+))
+                      *default-stroke-drawer-dispatcher*))
              (eq (drawing-options-function o2)
-                 +default-stroke-drawer-dispatcher+))
+                 *default-stroke-drawer-dispatcher*))
          (or (not (eq (drawing-options-function o2)
-                      +default-stroke-drawer-dispatcher+))
+                      *default-stroke-drawer-dispatcher*))
              (eq (drawing-options-function o1)
-                 +default-stroke-drawer-dispatcher+)))))
+                 *default-stroke-drawer-dispatcher*)))))
 
 (defvar +default-drawing-options+ (make-drawing-options)
   "The default set of drawing options used for strokes when
