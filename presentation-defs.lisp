@@ -697,21 +697,21 @@ history will be unchanged."
 ;;; in what we accept.
 
 (defun accept (type &rest rest-args &key
-	       (stream *standard-input*)
-	       (view nil viewp)
-	       (default nil defaultp)
-	       (default-type nil default-type-p)
-	       provide-default insert-default replace-input
-	       (history nil historyp)	; true default supplied below
-	       active-p			; Don't think this will be used
-	       prompt prompt-mode display-default
-	       query-identifier
-	       activation-gestures additional-activation-gestures
-	       delimiter-gestures additional-delimiter-gestures)
+                                      (stream *standard-input*)
+                                      (view nil viewp)
+                                      (default nil defaultp)
+                                      (default-type nil default-type-p)
+                                      provide-default insert-default replace-input
+                                      (history nil historyp)	; true default supplied below
+                                      active-p			; Don't think this will be used
+                                      prompt prompt-mode display-default
+                                      query-identifier
+                                      activation-gestures additional-activation-gestures
+                                      delimiter-gestures additional-delimiter-gestures)
   (declare (ignore insert-default replace-input active-p prompt prompt-mode
-		   display-default query-identifier
-		   activation-gestures additional-activation-gestures
-		   delimiter-gestures additional-delimiter-gestures))
+                   display-default query-identifier
+                   activation-gestures additional-activation-gestures
+                   delimiter-gestures additional-delimiter-gestures))
   (handler-bind ((abort-gesture (lambda (condition)
                                   (signal condition) ;; to give outer handlers a chance to say "I know how to handle this"
                                   (abort condition))))
@@ -819,25 +819,25 @@ history will be unchanged."
 	(values object (or object-type type))))))
 
 (defun accept-1 (stream type &key
-		 (view (stream-default-view stream))
-		 (default nil defaultp)
-		 (default-type nil default-type-p)
-		 provide-default
-		 insert-default
-		 (replace-input t)
-		 history
-		 active-p
-		 prompt
-		 prompt-mode
-		 display-default
-		 query-identifier
-		 (activation-gestures nil activationsp)
-		 (additional-activation-gestures nil additional-activations-p)
-		 (delimiter-gestures nil delimitersp)
-		 (additional-delimiter-gestures nil  additional-delimiters-p))
+                               (view (stream-default-view stream))
+                               (default nil defaultp)
+                               (default-type nil default-type-p)
+                               provide-default
+                               insert-default
+                               (replace-input t)
+                               history
+                               active-p
+                               prompt
+                               prompt-mode
+                               display-default
+                               query-identifier
+                               (activation-gestures nil activationsp)
+                               (additional-activation-gestures nil additional-activations-p)
+                               (delimiter-gestures nil delimitersp)
+                               (additional-delimiter-gestures nil  additional-delimiters-p))
   (declare (ignore provide-default history active-p
-		   prompt prompt-mode
-		   display-default query-identifier))
+                   prompt prompt-mode
+                   display-default query-identifier))
   (when (and defaultp (not default-type-p))
     (error ":default specified without :default-type"))
   (when (and activationsp additional-activations-p)
@@ -846,14 +846,14 @@ history will be unchanged."
   (unless (or activationsp additional-activations-p *activation-gestures*)
     (setq activation-gestures *standard-activation-gestures*))
   (let ((sensitizer-object nil)
-	(sensitizer-type nil))
+        (sensitizer-type nil))
     (with-input-editing
-	(stream
-	 :input-sensitizer #'(lambda (stream cont)
-			       (with-output-as-presentation
-				   (stream sensitizer-object sensitizer-type)
-				 (declare (ignore stream))
-				 (funcall cont))))
+        (stream
+         :input-sensitizer #'(lambda (stream cont)
+                               (with-output-as-presentation
+                                   (stream sensitizer-object sensitizer-type)
+                                 (declare (ignore stream))
+                                 (funcall cont))))
       (with-input-position (stream)	; support for calls to replace-input
         (when (and insert-default
                    (not (stream-rescanning-p stream)))
@@ -862,59 +862,59 @@ history will be unchanged."
           ;; the default if we're rescanning, only during initial
           ;; setup.
           (presentation-replace-input stream default default-type view))
-	(setf (values sensitizer-object sensitizer-type)
-	      (with-input-context (type)
-		  (object object-type event options)
-		(with-activation-gestures ((if additional-activations-p
-					       additional-activation-gestures
-					       activation-gestures)
-					   :override activationsp)
-		  (with-delimiter-gestures ((if additional-delimiters-p
-						additional-delimiter-gestures
-						delimiter-gestures)
-					    :override delimitersp)
-		    (let ((accept-results nil))
-		      (handle-empty-input (stream)
-			  (setq accept-results
-				(multiple-value-list
-				 (if defaultp
-                                     (funcall-presentation-generic-function
-                                      accept type stream view
-                                      :default default
-                                      :default-type default-type)
-				     (funcall-presentation-generic-function
-				      accept type stream view))))
-			;; User entered activation or delimiter
-			;; gesture without any input.
-			(if defaultp
-			    (progn
-			      (presentation-replace-input
-			       stream default default-type view :rescan nil))
-			    (simple-parse-error
-			     "Empty input for type ~S with no supplied default"
-			     type))
-			(setq accept-results (list default default-type)))
-		      ;; Eat trailing activation gesture
-		      ;; XXX what about pointer gestures?
-		      ;; XXX and delimiter gestures?
-		      (unless *recursive-accept-p*
-			(let ((ag (read-char-no-hang stream nil stream t)))
-			  (unless (or (null ag) (eq ag stream))
-			    (unless (activation-gesture-p ag)
-			      (unread-char ag stream)))))
-		      (values (car accept-results) (if (cdr accept-results)
-						       (cadr accept-results)
-						       type)))))
-		;; A presentation was clicked on, or something
-		(t
-		 (when (and replace-input
-			    (getf options :echo t)
-			    (not (stream-rescanning-p stream)))
-		   (presentation-replace-input stream object object-type view
-					       :rescan nil))
-		 (values object object-type))))
-	;; Just to make it clear that we're returning values
-	(values sensitizer-object sensitizer-type)))))
+        (setf (values sensitizer-object sensitizer-type)
+              (with-input-context (type)
+                (object object-type event options)
+                (with-activation-gestures ((if additional-activations-p
+                                               additional-activation-gestures
+                                               activation-gestures)
+                                           :override activationsp)
+                  (with-delimiter-gestures ((if additional-delimiters-p
+                                                additional-delimiter-gestures
+                                                delimiter-gestures)
+                                            :override delimitersp)
+                    (let ((accept-results nil))
+                      (handle-empty-input (stream)
+                                          (setq accept-results
+                                                (multiple-value-list
+                                                 (if defaultp
+                                                     (funcall-presentation-generic-function
+                                                      accept type stream view
+                                                      :default default
+                                                      :default-type default-type)
+                                                     (funcall-presentation-generic-function
+                                                      accept type stream view))))
+                                          ;; User entered activation or delimiter
+                                          ;; gesture without any input.
+                                          (if defaultp
+                                              (progn
+                                                (presentation-replace-input
+                                                 stream default default-type view :rescan nil))
+                                              (simple-parse-error
+                                               "Empty input for type ~S with no supplied default"
+                                               type))
+                                          (setq accept-results (list default default-type)))
+                      ;; Eat trailing activation gesture
+                      ;; XXX what about pointer gestures?
+                      ;; XXX and delimiter gestures?
+                      (unless *recursive-accept-p*
+                        (let ((ag (read-char-no-hang stream nil stream t)))
+                          (unless (or (null ag) (eq ag stream))
+                            (unless (activation-gesture-p ag)
+                              (unread-char ag stream)))))
+                      (values (car accept-results) (if (cdr accept-results)
+                                                       (cadr accept-results)
+                                                       type)))))
+                ;; A presentation was clicked on, or something
+                (t
+                 (when (and replace-input
+                            (getf options :echo t)
+                            (not (stream-rescanning-p stream)))
+                   (presentation-replace-input stream object object-type view
+                                               :rescan nil))
+                 (values object object-type))))
+        ;; Just to make it clear that we're returning values
+        (values sensitizer-object sensitizer-type)))))
 
 (defmethod prompt-for-accept ((stream t)
 			      type view
@@ -1621,44 +1621,40 @@ protocol retrieving gestures from a provided string."))
          (full-so-far (concatenate 'string directory-prefix so-far))
          (pathnames
           (loop with length = (length full-so-far)
-                and wildcard = (format nil "~A*.*"
-                                       (loop for start = 0 ; Replace * -> \*
-                                             for occurence = (position #\* so-far :start start)
-                                             until (= start (length so-far))
-                                             until (null occurence)
-                                             do (replace so-far "\\*" :start1 occurence)
-                                                (setf start (+ occurence 2))
-                                             finally (return so-far)))
-                for path in
-                #+(or sbcl cmu lispworks) (directory wildcard)
-                #+openmcl (directory wildcard :directories t)
-                #+allegro (directory wildcard :directories-are-files nil)
-                #+cormanlisp (nconc (directory wildcard)
-                                    (cl::directory-subdirs dirname))
-                #-(or sbcl cmu lispworks openmcl allegro cormanlisp)
-                (directory wildcard)
-                when (let ((mismatch (mismatch (namestring path) full-so-far)))
-                       (or (null mismatch) (= mismatch length)))
-                  collect path))
+             and wildcard = (format nil "~A*.*"
+                                    (loop for start = 0 ; Replace * -> \*
+                                       for occurence = (position #\* so-far :start start)
+                                       until (= start (length so-far))
+                                       until (null occurence)
+                                       do (replace so-far "\\*" :start1 occurence)
+                                         (setf start (+ occurence 2))
+                                       finally (return so-far)))
+             for path in
+               #+(or sbcl cmu lispworks) (directory wildcard)
+               #+openmcl (directory wildcard :directories t)
+               #+allegro (directory wildcard :directories-are-files nil)
+               #+cormanlisp (nconc (directory wildcard)
+                                   (cl::directory-subdirs dirname))
+               #-(or sbcl cmu lispworks openmcl allegro cormanlisp)
+               (directory wildcard)
+             when (let ((mismatch (mismatch (namestring path) full-so-far)))
+                    (or (null mismatch) (= mismatch length)))
+             collect path))
          (strings (mapcar #'namestring pathnames))
          (first-string (car strings))
          (length-common-prefix nil)
          (completed-string nil)
-         (full-completed-string nil)
          (input-is-directory-p (when (plusp (length so-far))
                                  (char= (aref so-far (1- (length so-far))) #\/))))
     (unless (null pathnames)
       (setf length-common-prefix
             (loop with length = (length first-string)
-                  for string in (cdr strings)
-                  do (setf length (min length (or (mismatch string first-string) length)))
-                  finally (return length))))
-    (unless (null pathnames)
+               for string in (cdr strings)
+               do (setf length (min length (or (mismatch string first-string) length)))
+               finally (return length)))
       (setf completed-string
             (subseq first-string (length directory-prefix)
-                    (if (null (cdr pathnames)) nil length-common-prefix)))
-      (setf full-completed-string
-            (concatenate 'string directory-prefix completed-string)))
+                    (if (null (cdr pathnames)) nil length-common-prefix))))
     (case mode
       ((:complete-limited :complete-maximal)
        (cond ((null pathnames)
@@ -1679,9 +1675,9 @@ protocol retrieving gestures from a provided string."))
       (:possibilities
        (values nil nil nil (length pathnames)
                (loop with length = (length directory-prefix)
-                     for name in pathnames
-                     collect (list (subseq (namestring name) length nil)
-                                   name)))))))
+                  for name in pathnames
+                  collect (list (subseq (namestring name) length nil)
+                                name)))))))
 
 (define-presentation-method accept ((type pathname) stream (view textual-view)
                                     &key (default *default-pathname-defaults* defaultp)
@@ -1689,7 +1685,9 @@ protocol retrieving gestures from a provided string."))
   (multiple-value-bind (pathname success string)
       (complete-input stream
                       #'filename-completer
-                      :allow-any-input t)
+                      :allow-any-input t
+                      ;;:partial-completers '(:tab)
+                      )
     (cond ((and pathname success)
            (values (if merge-default
                        (progn

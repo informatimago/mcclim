@@ -656,45 +656,45 @@ stream. Output will be done to its typeout."
 (defvar *completion-possibilities-continuation* nil)
 
 (defun read-completion-gesture (stream
-				partial-completers
-				help-displays-possibilities)
+                                partial-completers
+                                help-displays-possibilities)
   (flet ((possibilitiesp (gesture)
-	   (or (gesture-match gesture *possibilities-gestures*)
-	       (and help-displays-possibilities
-		    (gesture-match gesture *help-gestures*)))))
+           (or (gesture-match gesture *possibilities-gestures*)
+               (and help-displays-possibilities
+                    (gesture-match gesture *help-gestures*)))))
     (let ((*completion-possibilities-continuation*
-	   #'(lambda ()
-	       (return-from read-completion-gesture
-		 (values nil :possibilities)))))
+           #'(lambda ()
+               (return-from read-completion-gesture
+                 (values nil :possibilities)))))
       (handler-bind ((accelerator-gesture
-		      #'(lambda (c)
-			  (let ((gesture (accelerator-gesture-event c)))
-			    (when (possibilitiesp gesture)
-				(return-from read-completion-gesture
-				  (values nil :possibilities)))))))
-	(let ((gesture (read-gesture :stream stream)))
-	  (values gesture
-		  (cond ((possibilitiesp gesture)
-			 :possibilities)
-			((gesture-match gesture partial-completers)
-			 :complete-limited)
-			((gesture-match gesture *completion-gestures*)
-			 :complete-maximal)
-			((complete-gesture-p gesture)
-			 :complete)
-			(t nil))))))))
+                      #'(lambda (c)
+                          (let ((gesture (accelerator-gesture-event c)))
+                            (when (possibilitiesp gesture)
+                              (return-from read-completion-gesture
+                                (values nil :possibilities)))))))
+        (let ((gesture (read-gesture :stream stream)))
+          (values gesture
+                  (cond ((possibilitiesp gesture)
+                         :possibilities)
+                        ((gesture-match gesture partial-completers)
+                         :complete-limited)
+                        ((gesture-match gesture *completion-gestures*)
+                         :complete-maximal)
+                        ((complete-gesture-p gesture)
+                         :complete)
+                        (t nil))))))))
 
 (defparameter *trace-complete-input* nil)
 
 (defun complete-input (stream func &key
-		       partial-completers allow-any-input
-                       (possibility-printer #'possibility-printer)
-		       (help-displays-possibilities t))
+                                     partial-completers allow-any-input
+                                     (possibility-printer #'possibility-printer)
+                                     (help-displays-possibilities t))
   (let ((so-far (make-array 1 :element-type 'character :adjustable t
-			    :fill-pointer 0))
-	(*accelerator-gestures* (append *help-gestures*
-					*possibilities-gestures*
-					*accelerator-gestures*)))
+                            :fill-pointer 0))
+        (*accelerator-gestures* (append *help-gestures*
+                                        *possibilities-gestures*
+                                        *accelerator-gestures*)))
     (with-input-position (stream)
       (flet ((insert-input (input)
                (adjust-array so-far (length input)
@@ -708,61 +708,61 @@ stream. Output will be done to its typeout."
           (when success
             (return-from complete-input (values object success input))))
         (loop
-           (multiple-value-bind (gesture mode)
-               (read-completion-gesture stream
-                                        partial-completers
-                                        help-displays-possibilities)
-             (if mode
-                 (multiple-value-bind
-                       (input success object nmatches possibilities)
-                     (funcall func (subseq so-far 0) mode)
-                   (when (and (zerop nmatches)
-                              (eq mode :complete-limited)
-                              (complete-gesture-p gesture))
-                     ;; Gesture is both a partial completer and a
-                     ;; delimiter e.g., #\space.  If no partial match,
-                     ;; try again with a total match.
-                     (setf (values input success object nmatches possibilities)
-                           (funcall func (subseq so-far 0) :complete))
-                     (setf mode :complete))
-                   ;; Preserve the delimiter
-                   (when (and success (eq mode :complete))
-                     (unread-gesture gesture :stream stream))
-                   ;; Get completion from menu
-                   (when *trace-complete-input*
-                     (format *trace-output* "nmatches = ~A, mode = ~A~%"
-                             nmatches mode))
-                   (when (and (> nmatches 0) (eq mode :possibilities))
-                     (print-possibilities possibilities possibility-printer stream)
-                     (redraw-input-buffer stream)
-                     (let ((possibility
-                            (handler-case
-                                (with-input-context (`(completion ,possibilities) :override nil)
-                                    (object type event)
-                                    (prog1 nil (read-gesture :stream stream :peek-p t))
-                                  (t object))
-                              (abort-gesture () nil))))
-                       (if possibility
-                           (setf (values input success object nmatches)
-                                 (values (first possibility) t (second possibility) 1))
-                           (setf success nil
-                                 nmatches 0))))
-                   (unless (and (eq mode :complete) (not success))
-                     (if (> nmatches 0)
-                         (insert-input input)
-                         (beep)))
-                   (cond ((and success (eq mode :complete))
-                          (return-from complete-input
-                            (values object success input)))
-                         ((activation-gesture-p gesture)
-                          (if allow-any-input
-                              (return-from complete-input
-                                (values nil t (subseq so-far 0)))
-                              (error 'simple-completion-error
-                                     :format-control "Input ~S does not match"
-                                     :format-arguments (list so-far)
-                                     :input-so-far so-far)))))
-                 (vector-push-extend gesture so-far))))))))
+          (multiple-value-bind (gesture mode)
+              (read-completion-gesture stream
+                                       partial-completers
+                                       help-displays-possibilities)
+            (if mode
+                (multiple-value-bind
+                      (input success object nmatches possibilities)
+                    (funcall func (subseq so-far 0) mode)
+                  (when (and (zerop nmatches)
+                             (eq mode :complete-limited)
+                             (complete-gesture-p gesture))
+                    ;; Gesture is both a partial completer and a
+                    ;; delimiter e.g., #\space.  If no partial match,
+                    ;; try again with a total match.
+                    (setf (values input success object nmatches possibilities)
+                          (funcall func (subseq so-far 0) :complete))
+                    (setf mode :complete))
+                  ;; Preserve the delimiter
+                  (when (and success (eq mode :complete))
+                    (unread-gesture gesture :stream stream))
+                  ;; Get completion from menu
+                  (when *trace-complete-input*
+                    (format *trace-output* "nmatches = ~A, mode = ~A~%"
+                            nmatches mode))
+                  (when (and (> nmatches 0) (eq mode :possibilities))
+                    (print-possibilities possibilities possibility-printer stream)
+                    (redraw-input-buffer stream)
+                    (let ((possibility
+                           (handler-case
+                               (with-input-context (`(completion ,possibilities) :override nil)
+                                 (object type event)
+                                 (prog1 nil (read-gesture :stream stream :peek-p t))
+                                 (t object))
+                             (abort-gesture () nil))))
+                      (if possibility
+                          (setf (values input success object nmatches)
+                                (values (first possibility) t (second possibility) 1))
+                          (setf success nil
+                                nmatches 0))))
+                  (unless (and (eq mode :complete) (not success))
+                    (if (> nmatches 0)
+                        (insert-input input)
+                        (beep)))
+                  (cond ((and success (eq mode :complete))
+                         (return-from complete-input
+                           (values object success input)))
+                        ((activation-gesture-p gesture)
+                         (if allow-any-input
+                             (return-from complete-input
+                               (values nil t (subseq so-far 0)))
+                             (error 'simple-completion-error
+                                    :format-control "Input ~S does not match"
+                                    :format-arguments (list so-far)
+                                    :input-so-far so-far)))))
+                (vector-push-extend gesture so-far))))))))
 
 ;;; helper function
 

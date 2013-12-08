@@ -699,20 +699,20 @@ examine the type of the command menu item to see if it is
 
 (defun accept-form-for-argument (stream arg)
   (let ((accept-keys '(:default :default-type :display-default
-		       :prompt :documentation :insert-default)))
+                       :prompt :documentation :insert-default)))
     (destructuring-bind (name ptype &rest key-args
-			 &key (mentioned-default nil mentioned-default-p)
-			 &allow-other-keys)
-	arg
+                              &key (mentioned-default nil mentioned-default-p)
+                              &allow-other-keys)
+        arg
       (declare (ignore name))
       `(accept ,ptype :stream ,stream
-	       ,@(loop for (key val) on key-args by #'cddr
-		       when (member key accept-keys)
-		       append `(,key ,val) into args
-		       finally (return (if mentioned-default-p
-					   `(:default ,mentioned-default
-					     ,@args)
-					   args)))))))
+               ,@(loop for (key val) on key-args by #'cddr
+                    when (member key accept-keys)
+                    append `(,key ,val) into args
+                    finally (return (if mentioned-default-p
+                                        `(:default ,mentioned-default
+                                             ,@args)
+                                        args)))))))
 
 ;;; In the partial command reader accepting-values dialog, default
 ;;; values come either from the input command arguments, if a value
@@ -807,37 +807,37 @@ examine the type of the command menu item to see if it is
 
 (defun make-argument-accept-fun (name required-args keyword-args)
   (let ((stream-var (gensym "STREAM"))
-	(required-arg-names (mapcar #'car required-args))
-	(key-results (gensym "KEY-RESULTS")))
+        (required-arg-names (mapcar #'car required-args))
+        (key-results (gensym "KEY-RESULTS")))
     `(defun ,name (,stream-var)
        (let (,@(mapcar #'(lambda (arg)
-			   `(,arg *unsupplied-argument-marker*))
-		       required-arg-names)
-	       (,key-results nil))
-	 (block activated
-	   (flet ((eat-delimiter-or-activator ()
-		    (let ((gesture (read-gesture :stream ,stream-var)))
-		      (when (or (null gesture)
-				(activation-gesture-p gesture))
-			(return-from activated nil))
-		      (unless (delimiter-gesture-p gesture)
-			(unread-gesture gesture
-					:stream ,stream-var)))))
+                           `(,arg *unsupplied-argument-marker*))
+                       required-arg-names)
+             (,key-results nil))
+         (block activated
+           (flet ((eat-delimiter-or-activator ()
+                    (let ((gesture (read-gesture :stream ,stream-var)))
+                      (when (or (null gesture)
+                                (activation-gesture-p gesture))
+                        (return-from activated nil))
+                      (unless (delimiter-gesture-p gesture)
+                        (unread-gesture gesture
+                                        :stream ,stream-var)))))
              (declare (ignorable (function eat-delimiter-or-activator)))
-	     (let ((gesture (read-gesture :stream ,stream-var
-					  :timeout 0
-					  :peek-p t)))
-	       (cond ((and gesture (activation-gesture-p gesture))
-		      (return-from activated nil)))
-	       ,@(mapcan #'(lambda (arg)
-			     (copy-list
-			      `((setq ,(car arg)
-				 ,(accept-form-for-argument stream-var
-							    arg))
-				(eat-delimiter-or-activator))))
-			 required-args)
-	       ,(make-key-acceptors stream-var keyword-args key-results))))
-	 (list* ,@required-arg-names ,key-results)))))
+             (let ((gesture (read-gesture :stream ,stream-var
+                                          :timeout 0
+                                          :peek-p t)))
+               (cond ((and gesture (activation-gesture-p gesture))
+                      (return-from activated nil)))
+               ,@(mapcan #'(lambda (arg)
+                             (copy-list
+                              `((setq ,(car arg)
+                                      ,(accept-form-for-argument stream-var
+                                                                 arg))
+                                (eat-delimiter-or-activator))))
+                         required-args)
+               ,(make-key-acceptors stream-var keyword-args key-results))))
+         (list* ,@required-arg-names ,key-results)))))
 
 (defun make-partial-parser-fun (name required-args)
   (with-gensyms (command-table stream partial-command
@@ -984,13 +984,13 @@ examine the type of the command menu item to see if it is
   (destructuring-bind (func &key command-table name menu keystroke)
       name-and-options
     (multiple-value-bind (required-args keyword-args)
-	(loop for arg-tail on args
+        (loop for arg-tail on args
            for (arg) = arg-tail
            until (eq arg '&key)
            collect arg into required
            finally (return (values required (cdr arg-tail))))
       (let* ((command-func-args
-	      `(,@(mapcar #'car required-args)
+              `(,@(mapcar #'car required-args)
                   ,@(and
                      keyword-args
                      `(&key ,@(mapcar #'(lambda (arg-clause)
@@ -1001,16 +1001,16 @@ examine the type of the command menu item to see if it is
                                             (declare (ignore ptype))
                                             `(,arg-name ,default)))
                                       keyword-args)))))
-	     (accept-fun-name (gentemp (format nil "~A%ACCEPTOR%"
-					       (symbol-name func))
-				       (symbol-package func)))
-	     (partial-parser-fun-name (gentemp (format nil "~A%PARTIAL%"
-						       (symbol-name func))
-					       (symbol-package func)))
-	     (arg-unparser-fun-name (gentemp (format nil "~A%unparser%"
-						     (symbol-name func))
-					     (symbol-package func))))
-	`(progn
+             (accept-fun-name (gentemp (format nil "~A%ACCEPTOR%"
+                                               (symbol-name func))
+                                       (symbol-package func)))
+             (partial-parser-fun-name (gentemp (format nil "~A%PARTIAL%"
+                                                       (symbol-name func))
+                                               (symbol-package func)))
+             (arg-unparser-fun-name (gentemp (format nil "~A%unparser%"
+                                                     (symbol-name func))
+                                             (symbol-package func))))
+        `(progn
            (defun ,func ,command-func-args
              ,@body)
            ,(when command-table
@@ -1034,11 +1034,11 @@ examine the type of the command menu item to see if it is
                  (make-command-translators func command-table required-args))
            (setf (gethash ',func *command-parser-table*)
                  (make-instance 'command-parsers
-                                :parser #',accept-fun-name
-                                :partial-parser #',partial-parser-fun-name
-                                :required-args ',required-args
-                                :keyword-args  ',keyword-args
-                                :argument-unparser #',arg-unparser-fun-name))
+                     :parser #',accept-fun-name
+                     :partial-parser #',partial-parser-fun-name
+                     :required-args ',required-args
+                     :keyword-args  ',keyword-args
+                     :argument-unparser #',arg-unparser-fun-name))
            ',func)))))
 
 ;;; define-command with output destination extension
@@ -1133,32 +1133,32 @@ examine the type of the command menu item to see if it is
   (unless (listp name-and-options)
     (setq name-and-options (list name-and-options)))
   (destructuring-bind (func &rest options
-		       &key (provide-output-destination-keyword nil)
-		       &allow-other-keys)
+                            &key (provide-output-destination-keyword nil)
+                            &allow-other-keys)
       name-and-options
     (with-keywords-removed (options (:provide-output-destination-keyword))
       (if provide-output-destination-keyword
-	  (multiple-value-bind (required optional rest key key-supplied)
-	      (parse-lambda-list args)
-	    (declare (ignore required optional rest key))
-	    (let* ((destination-arg '(output-destination 'output-destination
-				      :default nil))
-		   (new-args (if key-supplied
-				 `(,@args ,destination-arg)
-				 `(,@args &key ,destination-arg))))
-	      (multiple-value-bind (decls new-body)
-		  (get-body-declarations body)
-		(with-gensyms (destination-continuation)
-		  `(%define-command (,func ,@options) ,new-args
-		     ,@decls
-		     (flet ((,destination-continuation ()
-			      ,@new-body))
-		       (declare (dynamic-extent #',destination-continuation))
-		       (invoke-with-standard-output #',destination-continuation
-						    output-destination)))))))
-	  `(%define-command (,func ,@options)
-			    ,args
-	     ,@body)))))
+          (multiple-value-bind (required optional rest key key-supplied)
+              (parse-lambda-list args)
+            (declare (ignore required optional rest key))
+            (let* ((destination-arg '(output-destination 'output-destination
+                                      :default nil))
+                   (new-args (if key-supplied
+                                 `(,@args ,destination-arg)
+                                 `(,@args &key ,destination-arg))))
+              (multiple-value-bind (decls new-body)
+                  (get-body-declarations body)
+                (with-gensyms (destination-continuation)
+                  `(%define-command (,func ,@options) ,new-args
+                                    ,@decls
+                                    (flet ((,destination-continuation ()
+                                             ,@new-body))
+                                      (declare (dynamic-extent #',destination-continuation))
+                                      (invoke-with-standard-output #',destination-continuation
+                                                                   output-destination)))))))
+          `(%define-command (,func ,@options)
+                            ,args
+                            ,@body)))))
 
 ;;; Note that command table inheritance is the opposite of Common Lisp
 ;;; subclassing / subtyping: the inheriting table defines a superset
